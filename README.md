@@ -10,6 +10,9 @@ The project automates the end-to-end process of **malware sample submission**, *
 
 This project was developed as part of an **academic Digital Forensics course**.
 
+You can view project demonstration at:
+https://www.linkedin.com/posts/abdul-haseeb-09886b287_cybersecurity-malwareanalysis-threatintelligence-activity-7401738853734068227--zKC?utm_source=share&utm_medium=member_desktop&rcm=ACoAAEW3gLQBj3NU-P3mb3Ss_R5lwz21wIGj_0U
+
 ---
 
 ## Problem Statement
