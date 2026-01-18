@@ -1,0 +1,145 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Upload sample",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "File",
+              "fieldType": "file",
+              "multipleFiles": false,
+              "requiredField": true
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2,
+      "position": [-2704, 720],
+      "name": "On Form Submission"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.tria.ge/v0/samples",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "File"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [-2448, 720],
+      "name": "Submit to Sandbox"
+    },
+    {
+      "parameters": {
+        "amount": 3,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [-2224, 720],
+      "name": "Wait for Analysis"
+    },
+    {
+      "parameters": {
+        "url": "https://api.tria.ge/v0/samples/{{$json.id}}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [-2096, 480],
+      "name": "Fetch Sample Metadata"
+    },
+    {
+      "parameters": {
+        "url": "https://api.tria.ge/v0/samples/{{$json.id}}/behavioral1/report_triage.json"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [-2016, 848],
+      "name": "Fetch Behavioral Report"
+    },
+    {
+      "parameters": {
+        "url": "https://www.virustotal.com/api/v3/files/{{$json.sha256}}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [-1872, 480],
+      "name": "VirusTotal Enrichment"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [-1600, 608],
+      "name": "Merge Reports"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract Triage score safely\nitems[0].json.triage_score = items[0].json?.sample?.score || 0;\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1568, 992],
+      "name": "Extract Triage Score"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare structured LLM input for malware analysis\nreturn [{ json: { llm_input: 'Sanitized malware analysis data prepared.' }}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1344, 608],
+      "name": "Prepare LLM Input"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.llm_input }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [-800, 416],
+      "name": "AI Malware Analysis Agent"
+    }
+  ],
+  "connections": {
+    "On Form Submission": {
+      "main": [[{ "node": "Submit to Sandbox", "type": "main", "index": 0 }]]
+    },
+    "Submit to Sandbox": {
+      "main": [[{ "node": "Wait for Analysis", "type": "main", "index": 0 }]]
+    },
+    "Wait for Analysis": {
+      "main": [[
+        { "node": "Fetch Sample Metadata", "type": "main", "index": 0 },
+        { "node": "Fetch Behavioral Report", "type": "main", "index": 0 }
+      ]]
+    },
+    "Fetch Sample Metadata": {
+      "main": [[{ "node": "VirusTotal Enrichment", "type": "main", "index": 0 }]]
+    },
+    "Fetch Behavioral Report": {
+      "main": [[{ "node": "Merge Reports", "type": "main", "index": 0 }]]
+    },
+    "VirusTotal Enrichment": {
+      "main": [[{ "node": "Merge Reports", "type": "main", "index": 1 }]]
+    },
+    "Merge Reports": {
+      "main": [[{ "node": "Prepare LLM Input", "type": "main", "index": 0 }]]
+    },
+    "Prepare LLM Input": {
+      "main": [[{ "node": "AI Malware Analysis Agent", "type": "main", "index": 0 }]]
+    }
+  }
+}
